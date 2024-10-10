@@ -3,7 +3,29 @@ import pandas as pd
 from product_filter import recommend_items, df
 import time
 import matplotlib.pyplot as plt
-
+class_images = {
+    'Intimates':  '../images/4_jeans.jpg',
+    'Dresses': '../images/dress.jpg',
+    'Pants': '../images/pants.jpg',
+    'Blouses': '../images/Blouses.jpg',
+    'Knits': '../images/Knits.jpg',
+    'Outerwear': '../images/4_jeans.jpg',
+    'Lounge':'../images/4_jeans.jpg',
+    'Sweaters': '../images/4_jeans.jpg',
+    'Skirts': '../images/4_jeans.jpg',
+    'Fine gauge': '../images/4_jeans.jpg',
+    'Sleep': '../images/4_jeans.jpg',
+    'Jackets': '../images/4_jeans.jpg',
+    'Swim': '../images/4_jeans.jpg',
+    'Trend': '../images/4_jeans.jpg',
+    'Jeans': '../images/4_jeans.jpg',
+    'Legwear':'../images/4_jeans.jpg',
+    'Shorts': '../images/4_jeans.jpg',
+    'Layering': '../images/4_jeans.jpg',
+    'Casual bottoms': '../images/4_jeans.jpg',
+    'Chemises': '../images/4_jeans.jpg',
+    # Add more mappings as needed
+}
 def plot_pie_chart(data, category_column):
     # Count the number of items per category
     category_counts = data[category_column].value_counts()
@@ -18,7 +40,7 @@ def plot_pie_chart(data, category_column):
 
 
 st.set_page_config(
-    page_title="Best Experience",
+    page_title="Best eXperience",
     page_icon="🍉",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -86,6 +108,17 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+def get_custom_output(weighted_vadar):
+    """
+    Returns a custom message or output based on the weighted_vadar score.
+    """
+    if weighted_vadar <= 0.3:
+        return "This product has received mostly negative reviews. Please proceed with caution."
+    elif 0.3 < weighted_vadar <= 0.7:
+        return "This product has received mixed reviews. It might suit your preferences depending on your needs."
+    else:
+        return "This product has received mostly positive reviews. Highly recommended!"
+
 
 def main():
     # Initialize RAG chain
@@ -98,11 +131,11 @@ def main():
     pie_chart = plot_pie_chart(df, 'division_name')  # Replace 'general_category' with your actual column name
     st.pyplot(pie_chart)
     with st.sidebar:
-            st.title('Products Evaluation System')
+            st.title('Clothes Recommendation System')
             # Select class_name (first line)
             class_name = df['class_name'].unique().tolist()
             class_name.insert(0, 'All')
-            Product_type = st.selectbox('Select your class_name:', class_name)
+            product_type = st.selectbox('Select your class_name:', class_name)
             # Load data from the helper script (you can load unique department_name directly)
             unique_labels = df['department_name'].unique().tolist()
             unique_labels.insert(0, 'All')
@@ -122,29 +155,53 @@ def main():
 
             # Button to find similar products (fifth line)
             if st.button('Find similar products!'):
-                top_recommended_products = recommend_items(Product_type, label_filter, brand_filter, rank_filter)
+                top_recommended_products = recommend_items(product_type, label_filter, brand_filter, rank_filter)
                 top_recommended_products.reset_index(inplace=True, drop=True)
 
-        # Check if top_recommended_products is empty
-    if top_recommended_products.empty:
-            st.write("No recommended products available.")
-    else:
-            with st.spinner("Just a moment while we create your personalized recommendation 🧴✨"):
+                if top_recommended_products.empty:
+                    st.write("No recommended products available.")
+                    product_type="All"
+                    top_recommended_products = recommend_items(product_type, label_filter, brand_filter, rank_filter)
+                    top_recommended_products.reset_index(inplace=True, drop=True)
+    with st.spinner("Just a moment while we create your personalized recommendation 🧺✨"):
                 st.empty()
-
+                #time.sleep(20)
                 # Create a clickable table with expandable details
-                st.subheader('Recommended Products')
+                if not top_recommended_products.empty:
+                    st.subheader('Recommended Products')
 
-                # Debug: Print the DataFrame structure
-                st.write(top_recommended_products)
+                    # Debug: Print the DataFrame structure
+                    st.write(top_recommended_products)
 
+                # for index, row in top_recommended_products.iterrows():
+                #     with st.expander(f"Details for {row['division_name']}", expanded=True):  # You can set 'expanded=True' to have it open by default
+                #         st.write(f"*Division Name*: {row['division_name']}")
+                #         st.write(f"*Rating*: {row['rating']}")
+                #         # Display custom message based on the weighted_vadar score
+                #         custom_message = get_custom_output(row['weighted_vadar'])
+                #         st.write(custom_message)
+                #         # Add any other relevant information from the row as needed
+                #         # st.write(f"*Other Info*: {row['other_column_name']}")  # Uncomment and replace with actual columns if needed
+                #                     # Hardcoded local image path for each product
+                #         st.image(class_images[row['class_name']], use_column_width=False, width=300)  # Set both width and height
+                        
                 for index, row in top_recommended_products.iterrows():
-                    with st.expander(f"Details for {row['division_name']}", expanded=True):  # You can set 'expanded=True' to have it open by default
-                        st.write(f"*Division Name*: {row['division_name']}")
-                        st.write(f"*Rating*: {row['rating']}")
-                        st.write(f"*weighted_vadar*: {row['weighted_vadar']}")
-                        # Add any other relevant information from the row as needed
-                        # st.write(f"*Other Info*: {row['other_column_name']}")  # Uncomment and replace with actual columns if needed
+                    with st.expander(f"Details for {row['division_name']}", expanded=True):
+                        # Create two columns: one for text (division name, rating) and another for the image
+                        col1, col2 = st.columns([2, 1])  # Adjust the column width ratio as needed
 
+                        with col1:
+                            st.write(f"*Division Name*: {row['division_name']}")
+                            st.write(f"*Rating*: {row['rating']}")
+                            # Display custom message based on the weighted_vadar score
+                            # custom_message = get_custom_output(row['weighted_vadar'])
+                            custom_message = get_custom_output(row['compound'])
+                            st.write(custom_message)
+
+                        with col2:
+                            # Display the image in the second column
+                            st.image(class_images[row['class_name']], use_column_width=True, width=150)  # Adjust width as needed
+
+                        
 if __name__ == "__main__":
   main()
